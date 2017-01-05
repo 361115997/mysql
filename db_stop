@@ -1,0 +1,24 @@
+#!/bin/sh 
+export PATH=/veris/usr/bin:/veris/usr/sbin:$PATH
+export LD_LIBRARY_PATH=/veris/usr/lib64:$LD_LIBBRARY_PATH
+
+port_list="$@"
+db_host="127.0.0.1"
+db_user="root"
+db_pwd="root@123"
+
+if [ -n "$port_list" ]; then
+
+	for port in $port_list
+	do
+		is_up=$(mysqladmin -h$db_host -P$port -u$db_user -p$db_pwd ping 2>/dev/null)
+                if [ "$is_up" != "mysqld is alive" ] ; then
+                        echo -e "\033[1;37m [$port] mysqld is shut down\033[0m"
+                        continue
+                fi
+		mysqladmin -h $db_host -P $port -u$db_user -p$db_pwd  shutdown
+		sleep 2	
+	done
+else
+	echo -e "\033[1;37m Usage: db_stop [PORT]...\033[0m"
+fi

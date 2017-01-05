@@ -1,0 +1,103 @@
+[mysqld]
+user      = mysql
+port      = 3306
+basedir   = /usr
+datadir   = /veris/mysql/3306/data
+socket    = /veris/mysql/3306/proc/mysql_3306.sock
+pid-file  = /veris/mysql/3306/proc/mysql_3306.pid
+tmpdir    = /veris/mysql/3306/tmp
+
+# Logging
+log_bin              =  /veris/mysql/3306/log/binlog/master_3306_bin
+log-error            =  /veris/mysql/3306/log/error/error_3306.log
+slow_query_log_file  =  /veris/mysql/3306/log/slow/slow_3306.log
+general_log_file     =  /veris/mysql/3306/log/general/general_3306.log
+relay_log            =  /veris/mysql/3306/log/relay/relay_3306.log
+relay_log_info_file  =  /veris/mysql/3306/log/relay/relay_log_3306.info
+slow_query_log       =  ON
+long_query_time      =  0.01
+#expire_logs_days     =  15
+explicit_defaults_for_timestamp = true
+
+#audit
+#plugin-dir                = /usr/lib64/mysql/plugin
+#plugin-load               = audit_log.so
+#audit_log_file            = /veris/np/mysql/3306/log/audit/audit_3306.log
+#audit_log_rotate_on_size  = 419430400
+#audit_log_flush           = ON
+#audit_log_policy          = LOGINS
+
+
+character-set-server = utf8
+init_connect = 'SET NAMES utf8'
+
+open_files_limit     = 30000
+max_connections      = 5000
+max_user_connections = 5020
+autocommit           = 0
+
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+
+skip-name-resolve
+max_allowed_packet = 32M
+
+# InnoDB
+innodb_buffer_pool_size    = 1G
+#innodb_file_format         = Barracuda
+innodb_flush_method        = O_DIRECT
+innodb_thread_concurrency  = 64
+innodb_io_capacity         = 200
+innodb_io_capacity_max     = 2000
+innodb_read_io_threads     = 16 
+innodb_write_io_threads    = 16
+innodb_change_buffering    = inserts
+innodb_log_buffer_size     = 64M
+innodb_log_file_size       = 1G
+innodb_log_group_home_dir  = /veris/mysql/3306/innodb/log
+innodb_log_files_in_group  = 3
+innodb_data_file_path      = ibdata1:1024M;ibdata2:1024M:autoextend
+innodb_open_files          = 65535
+innodb_lock_wait_timeout   = 100
+innodb_flush_log_at_trx_commit = 2
+
+
+# MyISAM
+key_buffer_size            = 16M
+
+# Other
+query_cache_size           = 16M
+tmp_table_size             = 128M
+max_heap_table_size        = 64M
+thread_cache_size          = 64
+bulk_insert_buffer_size    = 8M
+max_binlog_cache_size      = 64M
+max_binlog_size            = 512M
+log_bin_trust_function_creators = 1
+
+transaction_isolation = read-committed
+binlog_format = row
+
+lower_case_table_names = 1
+sql_mode = NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
+
+
+table_open_cache       = 35382
+table_definition_cache = 65535
+connect_timeout        = 28800
+net_write_timeout      = 300
+net_read_timeout       = 300
+wait_timeout           = 2592000
+interactive_timeout    = 2592000
+
+
+# Remove leading # to set options mainly useful for reporting servers.
+# The server defaults are faster for transactions and fast SELECTs.
+# Adjust sizes as needed, experiment to find the optimal values.
+join_buffer_size     = 512K
+sort_buffer_size     = 256K
+read_buffer_size     = 256K
+read_rnd_buffer_size = 256K
+
+# repl
+server-id = 3306

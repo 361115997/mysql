@@ -1,0 +1,54 @@
+#!/bin/bash 
+export PATH=/veris/usr/bin:/veris/usr/sbin:$PATH
+export LD_LIBRARY_PATH=/veris/usr/lib64:$LD_LIBBRARY_PATH
+
+port_list="$@"
+
+product_list="
+crm:5310
+billing:3306
+soa:5350
+voms:5330
+o2p:5340
+sff:5360
+sa:5370
+ng:5380
+np:5390
+pg:5391
+ose:5392
+sett:5400
+puppet:5393
+ott:5394
+sr0.3_crm:5311
+e2eoffer:3333
+migration03:5503
+crm:7777
+"
+
+if [ -n "$port_list" ]; then
+
+	for port in $port_list
+	do
+		is_up=$(mysqladmin -h127.0.0.1 -P$port -uroot -proot@123 ping 2>/dev/null)
+		if [ "$is_up" = "mysqld is alive" ] ; then
+			echo -e "\033[1;37m [$port] mysqld is alive\033[0m"
+			continue
+		fi
+		is_true=0
+		for product in $product_list
+		do
+			product_name=$(echo $product|awk -F':' '{print $1}')
+			product_port=$(echo $product|awk -F':' '{print $2}')
+			if [ $port = $product_port ]; then
+				is_true=1
+				/veris/mysql/bin/mysqld_safe_ailk --defaults-file=/veris/${product_name}/mysql/${product_port}/etc/my_${product_port}.cnf --ledir=/veris/usr/sbin &
+				sleep 2
+			fi
+		done
+		if [ $is_true = 0 ]; then
+			echo -e "\033[1;31m [$port] Port does not exist \033[0m"
+		fi
+	done
+else
+	echo -e "\033[1;37m Usage: db_start [PORT]...\033[0m"
+fi

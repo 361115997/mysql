@@ -1,0 +1,94 @@
+#!/bin/bash
+
+
+usage () {
+        cat <<EOF
+Usage: $0 [p_name] [p_port]
+  --product-name=NAME   Use the specified name
+  --product-port=PORT   Use the specified port
+  --veris               CRM/BILLING Formal environmental use this option
+
+All other options are passed to the db_install program.
+
+EOF
+        exit 1
+}
+
+parse_arguments() {
+  for arg do
+    val=`echo "$arg" | sed -e 's;^--[^=]*=;;'`
+    optname=`echo "$arg" | sed -e 's/^\(--[^=]*\)=.*$/\1/'`
+    optname_subst=`echo "$optname" | sed 's/_/-/g'`
+    arg=`echo $arg | sed "s/^$optname/$optname_subst/"`
+    case "$arg" in
+      --product-name=*) p_name="$val" ;;
+      --product-port=*) p_port="$val" ;;
+      --veris) veris=1 ;;
+      --help) usage ;;
+      *)
+        usage
+       ;;
+    esac
+  done
+}
+veris=0
+parse_arguments $@
+
+if [ -n "${p_name}" -a -n "${p_port}" ]
+then
+  if [[ ${p_port} =~ ^[0-9]{4}$ ]]
+  then
+	is_up=$(mysqladmin -h127.0.0.1 -P${p_port} -uroot -proot@123 ping 2>/dev/null)
+	if [ "$is_up" = "mysqld is alive" ] ; then
+		echo -e "\033[1;37m [${p_port}] is already in use \033[0m"
+		exit 1
+	fi
+
+	mkdir -p /veris/${p_name}/mysql/${p_port}/data
+	mkdir -p /veris/${p_name}/mysql/${p_port}/etc
+	mkdir -p /veris/${p_name}/mysql/${p_port}/innodb
+	mkdir -p /veris/${p_name}/mysql/${p_port}/innodb/log
+	mkdir -p /veris/${p_name}/mysql/${p_port}/proc
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log/audit
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log/binlog
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log/error
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log/general
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log/relay
+	mkdir -p /veris/${p_name}/mysql/${p_port}/log/slow
+	mkdir -p /veris/${p_name}/mysql/${p_port}/tmp
+	chmod -R 755 /veris/${p_name}/
+	chown -R mysql:mysql /veris/${p_name}/mysql/${p_port}/*
+	
+	defaults_file="/veris/${p_name}/mysql/${p_port}/etc/my_${p_port}.cnf"
+	
+	cp /veris/my_5360.cnf ${defaults_file}
+	chown mysql:mysql ${defaults_file}
+        if [ $veris -eq 0 ]
+        then
+            sed -i 's/sff/'"${p_name}"'/g;s/5360/'"${p_port}"'/g' ${defaults_file}
+        else
+            sed -i 's/sff/'"${p_name}"'/g;s/5360/'"${p_port}"'/g;s/^innodb_buffer_pool_size    = 1G/innodb_buffer_pool_size    = 6G/g;s/^audit_log_policy          = LOGINS/audit_log_policy          = ALL/g;s/^innodb_additional_mem_pool_size=20M/innodb_additional_mem_pool_size=32M/g;/^innodb_use_native_aio/d' ${defaults_file}
+        fi
+	
+	/usr/bin/mysql_install_db --defaults-file=/veris/${p_name}/mysql/${p_port}/etc/my_${p_port}.cnf --basedir=/veris/usr --datadir=/veris/${p_name}/mysql/${p_port}/data --user=mysql
+	/usr/bin/mysqld_safe --defaults-file=/veris/${p_name}/mysql/${p_port}/etc/my_${p_port}.cnf --ledir=/veris/usr/sbin &
+
+        while :
+        do
+                if [ -f /veris/${p_name}/mysql/${p_port}/proc/mysql_${p_port}.pid ]
+                then
+                sleep 3
+                echo -e "\033[1;37m [${p_name} ${p_port}] mysqld successful start!\033[0m"    
+                mysql -uroot -S /veris/${p_name}/mysql/${p_port}/proc/mysql_${p_port}.sock -e "UPDATE mysql.user SET password=PASSWORD('root@123') where User='root';FLUSH PRIVILEGES;delete from mysql.user where user='';commit;"
+                break
+                fi
+		sleep 1
+        done
+  else
+     echo -e "\033[1;37mproduct-port Non-standard!\033[0m"
+     exit 1
+  fi
+else
+	usage
+fi
