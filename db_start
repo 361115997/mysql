@@ -1,4 +1,5 @@
 #!/bin/bash 
+#you are the best
 export PATH=/veris/usr/bin:/veris/usr/sbin:$PATH
 export LD_LIBRARY_PATH=/veris/usr/lib64:$LD_LIBBRARY_PATH
 
